@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdbool.h>
+#include <stdlib.h>
 
 unsigned int data_count = 0;
 unsigned int data_index = 0;
@@ -11,78 +12,99 @@ typedef struct Data {
 	char name[15];
 	char phone[18];
 	char address[50];
-
-	struct Data *link;
 }data;
 
-void initdata(data *ptr)
+typedef struct node {
+	data _data;
+	struct node* prev;
+	struct node* next;
+}Node;
+
+Node *head, *tail;
+
+bool addNode(data _data)
 {
-	ptr->index = 0;
-	strcpy_s(ptr->name, sizeof(ptr->name),"");
-	strcpy_s(ptr->phone, sizeof(ptr->phone),"");
-	strcpy_s(ptr->address, sizeof(ptr->address),"");
-	ptr->link = NULL;
-}
-
-bool addData(data *ptr)
-{
-	while (ptr->link != NULL)
-		ptr = ptr->link;
-
-	ptr->link = (data*)malloc(sizeof(data));
-
-	if (ptr->link == NULL)
+	Node* newNode = (Node*)malloc(sizeof(Node));
+	if (newNode == NULL)
 	{
-		printf("\n\n 시스템 메모리 부족으로 인하여 추가 작업이 실패하였습니다. \n\n");
-		return false;
+		printf("주소록 추가에 실패 하였습니다. \n");
+		return;
 	}
 
-	ptr = ptr->link;
+	newNode->_data.index = _data.index;
+	strcpy_s(newNode->_data.name, sizeof(newNode->_data.name), _data.name);
+	strcpy_s(newNode->_data.phone, sizeof(newNode->_data.phone), _data.phone);
+	strcpy_s(newNode->_data.address , sizeof(newNode->_data.address), _data.address);
 
-	printf("****** 추가 ******\n\n\n");
+	Node* cur = head->next;
 
-	printf("이름 입력 : ");
-	fgets(ptr->name, sizeof(ptr->name), stdin);
-	ptr->name[strlen(ptr->name) - 1] = '\0';
+	while (cur != NULL && cur->next != NULL && cur != tail && cur->_data.index < _data.index)
+	{
+		cur = cur->next;
+	}
 
-	printf("전화번호 입력 :");
-	fgets(ptr->phone, sizeof(ptr->phone), stdin);
-	ptr->phone[strlen(ptr->phone) - 1] = '\0';
-
-	printf("주소입력 :");
-	fgets(ptr->address, sizeof(ptr->address), stdin);
-	ptr->address[strlen(ptr->address) - 1] = '\0';
-
-	ptr->link = NULL;
-
-	data_count = data_count + 1;
-	data_index = data_index + 1;
-	ptr->index = data_index;
+	Node* prev = cur->prev;
+	prev->next = newNode;
+	newNode->prev = prev;
+	cur->prev = newNode;
+	newNode->next = cur;
 
 	return true;
 }
 
-void Display(data *ptr)
+bool addData()
 {
-	ptr = ptr->link;
+	bool result = false;
+	data _data;
+	printf("****** 추가 ******\n\n\n");
+
+	printf("인덱스 입력 : ");
+	scanf_s("%d", &_data.index);
+	fflush(stdin);
+	getchar();
+
+	printf("이름 입력 : ");
+	fgets(_data.name, sizeof(_data.name), stdin);
+	_data.name[strlen(_data.name) - 1] = '\0';
+
+	printf("전화번호 입력 :");
+	fgets(_data.phone, sizeof(_data.phone), stdin);
+	_data.phone[strlen(_data.phone) - 1] = '\0';
+
+	printf("주소입력 :");
+	fgets(_data.address, sizeof(_data.address), stdin);
+	_data.address[strlen(_data.address) - 1] = '\0';
+
+	data_count = data_count + 1;
+
+	result = addNode(_data);
+
+	return true;
+}
+
+
+
+void Display(Node *ptr)
+{
+	ptr = ptr->next;
 	printf("****** 보기 ******\n\n\n");
 
-	while (ptr != NULL)
+	while (ptr != tail)
 	{
 		printf("\n---------------------------------\n");
 		printf("\n\n");
-		printf("데이터 번호 : %d", ptr->index);
+		printf("데이터 번호 : %d", ptr->_data.index);
 		printf("\n\n");
 		printf(" 이름 : ");
-		printf("%-s", ptr->name);
+		printf("%-s", ptr->_data.name);
 		printf("\n\n 전화 번호 :");
-		printf("%-s", ptr->phone);
+		printf("%-s", ptr->_data.phone);
 		printf("\n\n 주소 : ");
-		printf("%-s", ptr->address);
+		printf("%-s", ptr->_data.address);
 		printf("\n\n");
 		printf("\n---------------------------------\n");
 
-		ptr = ptr->link;
+		ptr = ptr->next;
 
 		printf("\n");
 	}
@@ -90,88 +112,103 @@ void Display(data *ptr)
 	printf("\n");
 }
 
-void SearchData(data *ptr)
+void SearchData()
 {
-	char name[15];
-	printf("****** 검색 ******\n\n\n");
-
-	printf("검색할 사람의 이름 : ");
-	fgets(name, sizeof(name), stdin);
-	name[strlen(name) - 1] = '\0';
-
-	while (ptr->link != NULL)
+	if (data_count == 0)
 	{
-		ptr = ptr->link;
+		printf("조회할 데이터가 없습니다.\n");
+		return;
+	}
 
-		if (strcmp(ptr->name, name) == 0)
+	int index;
+	Node* searchNode;
+
+	while (true) {
+		printf("찾을 주소의 번호 입력 :");
+		scanf_s("%d", &index);
+		getchar();
+
+		searchNode = head->next;
+
+		while (searchNode->_data.index != index && searchNode != tail)
 		{
-			printf("\n ---- 검색 결과 ---- \n\n");
-			printf("이름 : %s", ptr->name);
-			printf("\n\n");
-			printf("전화번호 : %s", ptr->phone);
-			printf("\n\n");
-			printf("주소 : %s", ptr->address);
-			printf("\n\n");
-			printf("-------------------------------------");
-			printf("\n\n");
-			break;
+			searchNode = searchNode->next;
 		}
 
-		if (ptr->link == NULL)
+		if (searchNode == tail)
 		{
-			printf("\n %s로 등록된 데이터가 없습니다.\n", name);
+			printf("\n\n 검색할번호는 없는 번호입니다. 다시 입력해주세요.\n\n\n");
+		}
+		else
+		{
+			printf("\n---------------------------------\n");
+			printf("\n\n");
+			printf("데이터 번호 : %d", searchNode->_data.index);
+			printf("\n\n");
+			printf(" 이름 : ");
+			printf("%-s", searchNode->_data.name);
+			printf("\n\n 전화 번호 :");
+			printf("%-s", searchNode->_data.phone);
+			printf("\n\n 주소 : ");
+			printf("%-s", searchNode->_data.address);
+			printf("\n\n");
+			printf("\n---------------------------------\n");
+			printf("\n");
+			break;
 		}
 	}
 
 	return;
 }
 
-void DeleteData(data *ptr)
+void DeleteData()
 {
-	data *temp = NULL;
-	bool flag = false;
-	char name[15];
-	printf("****** 삭제 ******\n\n\n");
-	printf("삭제 할 사람의 이름 : ");
-	fgets(name, sizeof(name), stdin);
-	name[strlen(name) - 1] = '\0';
-
-	while (ptr->link != NULL)
+	if (data_count == 0)
 	{
-		temp = ptr;
-		ptr = ptr->link;
-
-		if (strcmp(name, ptr->name) == 0)
-		{
-			flag = true;
-			temp->link = ptr->link;
-			free(ptr);
-
-			printf("\n\n삭제 완료\n");
-			data_count = data_count - 1;
-			break;
-		}
-
-		if (ptr->link == NULL)
-		{
-			printf("\n %s로 등록된 데이터가 없습니다.\n", name);
-		}
+		printf("삭제할 데이터가 없습니다.\n");
+		return;
 	}
 
+	int index;
+	printf("삭제할 주소의 번호 입력 :");
+	scanf_s("%d", &index);
+	getchar();
+
+	Node* delNode = head->next;
+
+	while (delNode->_data.index != index && delNode !=tail)
+	{
+		delNode = delNode->next;
+	}
+
+	if (delNode == tail)
+	{
+		printf("\n\n입력된 번호는 없는 주소입니다.\n\n");
+		return;
+	}
+
+	Node* prev = delNode->prev;
+	prev->next = delNode->next;
+	prev->next->prev = prev;
 	
+	free(delNode);
+
+	data_count = data_count - 1;
+
+	printf("\n삭제 완료\n");
 
 	return;
 }
-
 
 void main()
 {
-	data *head = NULL;
 	int choice;
 
-	head = (data*)malloc(sizeof(data));
+	head = (Node*)malloc(sizeof(Node));
+	tail = (Node*)malloc(sizeof(Node));
 
-	initdata(head);
+	head->next = tail;
+	tail->prev = head;
 
 	do {
 		printf("\n\n");
@@ -198,7 +235,7 @@ void main()
 		switch (choice)
 		{
 		case '1':
-			if (addData(head))
+			if (addData())
 			{
 				printf("\n\n성공\n\n");
 			}
@@ -211,10 +248,10 @@ void main()
 			Display(head);
 			break;
 		case '3':
-			DeleteData(head);
+			DeleteData();
 			break;
 		case '4':
-			SearchData(head);
+			SearchData();
 			break;
 		case '5':
 			printf("종료\n");
